@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p /config/.local/share/Anki2
+
+exec /opt/anki/anki
+

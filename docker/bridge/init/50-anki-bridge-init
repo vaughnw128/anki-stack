@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ADDONS_DIR="/config/.local/share/Anki2/addons21"
+TARGET_DIR="${ADDONS_DIR}/2055492159"
+SOURCE_DIR="/defaults/addons21/2055492159"
+CONFIG_FILE="${TARGET_DIR}/config.json"
+SYNC_ADDON_TARGET="${ADDONS_DIR}/anki_sync_redirector"
+SYNC_ADDON_SOURCE="/defaults/addons21/anki_sync_redirector"
+
+mkdir -p "${ADDONS_DIR}"
+
+if [ ! -d "${TARGET_DIR}" ]; then
+  cp -R "${SOURCE_DIR}" "${TARGET_DIR}"
+fi
+
+if [ ! -d "${SYNC_ADDON_TARGET}" ]; then
+  cp -R "${SYNC_ADDON_SOURCE}" "${SYNC_ADDON_TARGET}"
+fi
+
+cp /defaults/ankiconnect-config.json "${CONFIG_FILE}"
+
+if [ -n "${ANKICONNECT_API_KEY:-}" ] && command -v jq >/dev/null 2>&1; then
+  tmp="$(mktemp)"
+  jq --arg apiKey "${ANKICONNECT_API_KEY}" \
+     --arg bind "${ANKICONNECT_BIND_ADDRESS:-0.0.0.0}" \
+     --argjson port "${ANKICONNECT_BIND_PORT:-8765}" \
+     --arg cors "${ANKICONNECT_CORS_ORIGIN:-http://localhost}" \
+     --arg corsList "${ANKICONNECT_CORS_ORIGIN_LIST:-*}" \
+     '.apiKey=$apiKey
+      | .webBindAddress=$bind
+      | .webBindPort=$port
+      | .webCorsOrigin=$cors
+      | .webCorsOriginList=($corsList | split(","))' \
+     "${CONFIG_FILE}" > "${tmp}"
+  mv "${tmp}" "${CONFIG_FILE}"
+fi

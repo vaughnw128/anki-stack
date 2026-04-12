@@ -1,0 +1,166 @@
+sharedGateway: &sharedGateway
+  type: gateway-api-shared
+  parentGatewayName: default-gateway
+  parentGatewayNamespace: default
+  sectionName: https
+  httpsRedirect: true
+
+anki-sync:
+  enabled: true
+  name: "anki-sync"
+  image: "ghcr.io/vaughnw128/anki-sync"
+  imageTag: "25.9.2"
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  revisionHistoryLimit: 1
+  containerPort: 8080
+
+  envVars:
+    SYNC_BASE: "/data/sync"
+    SYNC_HOST: "0.0.0.0"
+    SYNC_PORT: "8080"
+    RUST_LOG: "anki=info"
+    PASSWORDS_HASHED: "0"
+
+  # Required: set SYNC_USER1 to "username:password" through External Secrets.
+  secretVars: {}
+  secretStoreName: "1password-sdk"
+  secretRefreshInterval: "1h"
+
+  persistence:
+    - name: sync-data
+      mountPath: /data
+      size: 10Gi
+      accessModes:
+        - ReadWriteOnce
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  startupProbe:
+    enabled: true
+    exec:
+      command:
+        - sh
+        - -c
+        - test -d /data/sync
+    periodSeconds: 10
+    failureThreshold: 30
+
+  livenessProbe:
+    enabled: true
+    exec:
+      command:
+        - sh
+        - -c
+        - test -d /data/sync
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+
+  readinessProbe:
+    enabled: true
+    exec:
+      command:
+        - sh
+        - -c
+        - test -d /data/sync
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+
+  securityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+
+  gateway:
+    <<: *sharedGateway
+    hostname: sync.anki.internal.vw-ops.net
+
+anki-connect:
+  enabled: true
+  name: "anki-connect"
+  image: "ghcr.io/vaughnw128/anki-connect"
+  imageTag: "25.9.2"
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  revisionHistoryLimit: 1
+  containerPort: 3000
+
+  envVars:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "America/New_York"
+    ANKI_SYNC_BASE_URL: "http://anki-sync/"
+    ANKICONNECT_BIND_ADDRESS: "0.0.0.0"
+    ANKICONNECT_BIND_PORT: "8765"
+    ANKICONNECT_API_KEY: ""
+    ANKICONNECT_CORS_ORIGIN: "http://localhost"
+    ANKICONNECT_CORS_ORIGIN_LIST: "*"
+
+  persistence:
+    - name: anki-config
+      mountPath: /config
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+  startupProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: 3000
+    periodSeconds: 10
+    failureThreshold: 60
+
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 10
+
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+  containerSecurityContext:
+    readOnlyRootFilesystem: false
+
+  gateway:
+    <<: *sharedGateway
+    hostname: connect.anki.internal.vw-ops.net
+
+  ankiConnect:
+    enabled: true
+    servicePort: 8765
+    serviceType: ClusterIP

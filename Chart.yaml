@@ -1,0 +1,17 @@
+apiVersion: v2
+name: anki-stack
+description: Private Anki stack with anki-sync and anki-connect workloads.
+type: application
+version: 0.1.0
+appVersion: "25.9.2"
+dependencies:
+  - name: single-container
+    alias: anki-sync
+    version: "1.0.0"
+    repository: "oci://ghcr.io/vaughnw128/charts"
+    condition: anki-sync.enabled
+  - name: single-container
+    alias: anki-connect
+    version: "1.0.0"
+    repository: "oci://ghcr.io/vaughnw128/charts"
+    condition: anki-connect.enabled

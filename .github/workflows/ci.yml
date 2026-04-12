@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "Chart.yaml"
+      - "Chart.lock"
+      - "values.yaml"
+      - "templates/**"
+      - "docker/**"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "Chart.yaml"
+      - "Chart.lock"
+      - "values.yaml"
+      - "templates/**"
+      - "docker/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4.3.0
+
+      - name: Login to GHCR for chart dependencies
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "${{ github.repository_owner }}" --password-stdin
+
+      - name: Build dependencies
+        run: helm dependency build .
+
+      - name: Lint chart
+        run: helm lint .
+
+      - name: Render chart
+        run: helm template anki-stack .
