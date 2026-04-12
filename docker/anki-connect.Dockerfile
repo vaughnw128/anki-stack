@@ -1,6 +1,6 @@
 FROM lscr.io/linuxserver/baseimage-kasmvnc:ubuntunoble
 
-ARG ANKI_VERSION=25.07.5
+ARG ANKI_VERSION=25.09
 
 ENV TITLE=AnkiDesktop
 ENV CUSTOM_PORT=3000
@@ -30,7 +30,7 @@ RUN apt-get update && \
       xdg-utils && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://github.com/ankitects/anki/releases/download/${ANKI_VERSION}/anki-${ANKI_VERSION}-linux-qt6.tar.zst -o /tmp/anki.tar.zst && \
+RUN curl -fsSL https://github.com/ankitects/anki/releases/download/${ANKI_VERSION}/anki-launcher-${ANKI_VERSION}-linux.tar.zst -o /tmp/anki.tar.zst && \
     mkdir -p /opt/anki && \
     tar --use-compress-program=unzstd -xf /tmp/anki.tar.zst -C /opt/anki --strip-components=1 && \
     rm /tmp/anki.tar.zst
