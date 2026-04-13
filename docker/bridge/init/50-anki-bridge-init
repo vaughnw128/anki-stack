@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+OPENBOX_DIR="/config/.config/openbox"
+AUTOSTART_TARGET="${OPENBOX_DIR}/autostart"
 ADDONS_DIR="/config/.local/share/Anki2/addons21"
 TARGET_DIR="${ADDONS_DIR}/2055492159"
 SOURCE_DIR="/defaults/addons21/2055492159"
@@ -8,15 +10,18 @@ CONFIG_FILE="${TARGET_DIR}/config.json"
 SYNC_ADDON_TARGET="${ADDONS_DIR}/anki_sync_redirector"
 SYNC_ADDON_SOURCE="/defaults/addons21/anki_sync_redirector"
 
-mkdir -p "${ADDONS_DIR}"
+mkdir -p "${OPENBOX_DIR}" "${ADDONS_DIR}"
 
-if [ ! -d "${TARGET_DIR}" ]; then
-  cp -R "${SOURCE_DIR}" "${TARGET_DIR}"
-fi
+# Always refresh the Openbox autostart script from the image so stale PVC
+# contents can't keep an old shell script around.
+cp /defaults/autostart "${AUTOSTART_TARGET}"
+chmod +x "${AUTOSTART_TARGET}"
 
-if [ ! -d "${SYNC_ADDON_TARGET}" ]; then
-  cp -R "${SYNC_ADDON_SOURCE}" "${SYNC_ADDON_TARGET}"
-fi
+# Refresh bundled add-ons on every boot so container image fixes override
+# stale files persisted in the profile volume.
+rm -rf "${TARGET_DIR}" "${SYNC_ADDON_TARGET}"
+cp -R "${SOURCE_DIR}" "${TARGET_DIR}"
+cp -R "${SYNC_ADDON_SOURCE}" "${SYNC_ADDON_TARGET}"
 
 cp /defaults/ankiconnect-config.json "${CONFIG_FILE}"
 
