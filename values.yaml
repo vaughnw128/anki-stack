@@ -114,6 +114,28 @@ anki-connect:
       accessModes:
         - ReadWriteOnce
 
+  volumeMounts:
+    - name: nginx-log
+      mountPath: /var/log/nginx
+      readOnly: false
+      source:
+        emptyDir: {}
+    - name: nginx-cache
+      mountPath: /var/lib/nginx
+      readOnly: false
+      source:
+        emptyDir: {}
+    - name: run-dir
+      mountPath: /run
+      readOnly: false
+      source:
+        emptyDir: {}
+    - name: tmp-dir
+      mountPath: /tmp
+      readOnly: false
+      source:
+        emptyDir: {}
+
   resources:
     requests:
       cpu: 250m
@@ -149,12 +171,21 @@ anki-connect:
     timeoutSeconds: 10
 
   securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
+    runAsNonRoot: false
     fsGroup: 1000
 
   containerSecurityContext:
+    allowPrivilegeEscalation: true
+    runAsUser: 0
+    runAsGroup: 0
     readOnlyRootFilesystem: false
+    capabilities:
+      drop: []
+      add:
+        - CHOWN
+        - FOWNER
+        - SETGID
+        - SETUID
 
   gateway:
     <<: *sharedGateway
