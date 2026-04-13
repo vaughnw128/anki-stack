@@ -15,6 +15,8 @@ RUN apt-get update && \
       curl \
       git \
       jq \
+      python3 \
+      python3-xdg \
       unzip \
       zstd \
       ca-certificates \
@@ -27,6 +29,7 @@ RUN apt-get update && \
       libxkbcommon0 \
       libdrm2 \
       libgtk-3-0 \
+      openbox \
       xdg-utils && \
     rm -rf /var/lib/apt/lists/*
 

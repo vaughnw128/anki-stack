@@ -1,7 +1,6 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 mkdir -p /config/.local/share/Anki2
 
-exec /opt/anki/anki
-
+/opt/anki/anki &
